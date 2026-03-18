@@ -1,0 +1,119 @@
+/* =========================
+   ArchSun - Subtle Native Style
+   ========================= */
+
+/* Keep Maya defaults — only adjust structure */
+QWidget {
+    font-size: 12px;
+}
+
+/* Title */
+QLabel#TitleLabel {
+    font-size: 14px;
+    font-weight: bold;
+    padding-bottom: 6px;
+}
+
+/* Group boxes — subtle, not boxed-heavy */
+QGroupBox {
+    font-weight: bold;
+    margin-top: 10px;
+    padding-top: 6px;
+    border: none;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 2px;
+}
+QWidget#SectionBlock {
+    background-color: rgba(255, 255, 255, 12);
+    border: 1px solid rgba(255, 255, 255, 22);
+    border-radius: 5px;
+    padding: 10px;
+}
+
+QWidget#StatusBlock {
+    background-color: rgba(255, 255, 255, 8);
+    border-radius: 5px;
+    border-left: 3px solid rgba(255, 255, 255, 18);
+    border-top: 1px solid rgba(255, 255, 255, 12);
+    border-right: 1px solid rgba(255, 255, 255, 12);
+    border-bottom: 1px solid rgba(255, 255, 255, 12);
+    padding: 8px;
+}
+
+QLabel#StatusMessage {
+    padding: 0px;
+    color: #B6BFCA;
+}
+
+QWidget#StatusBlock[statusState="initial"] {
+    background-color: rgba(255, 255, 255, 4);
+    border-left: 3px solid rgba(255, 255, 255, 18);
+}
+
+QWidget#StatusBlock[statusState="dirty"] {
+    background-color: rgba(255, 214, 102, 12);
+    border-left: 3px solid rgba(255, 214, 102, 70);
+}
+
+QWidget#StatusBlock[statusState="applied"] {
+    background-color: rgba(115, 190, 120, 10);
+    border-left: 3px solid rgba(115, 190, 120, 70);
+}
+
+QWidget#StatusBlock[statusState="error"] {
+    background-color: rgba(220, 90, 90, 12);
+    border-left: 3px solid rgba(220, 90, 90, 80);
+}
+
+QLabel#StatusMessage[statusState="initial"] {
+    color: #B6BFCA;
+    font-style: italic;
+}
+
+QLabel#StatusMessage[statusState="dirty"] {
+    color: #D3C089;
+    font-weight: bold;
+}
+
+QLabel#StatusMessage[statusState="applied"] {
+    color: #A7C7A1;
+    font-weight: bold;
+}
+
+QLabel#StatusMessage[statusState="error"] {
+    color: #D99292;
+    font-weight: bold;
+}
+
+/* Inputs should stretch */
+QDoubleSpinBox,
+QSpinBox,
+QDateEdit,
+QComboBox,
+QSlider {
+    min-height: 22px;
+}
+
+/* Buttons — subtle */
+QPushButton {
+    padding: 4px 6px;
+}
+
+/* Slider — light touch only */
+QSlider::groove:horizontal {
+    height: 3px;
+}
+
+QSlider::handle:horizontal {
+    width: 12px;
+}
+
+/* Form spacing */
+QFormLayout {
+    margin: 0px;
+    spacing: 6px;
+}
