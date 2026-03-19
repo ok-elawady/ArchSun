@@ -1,6 +1,11 @@
 import pytest
 
-from archsun.core.locations import CITIES, find_nearest_city, haversine_distance
+from archsun.core.locations import (
+    CITIES,
+    find_nearest_city,
+    haversine_distance,
+    infer_utc_offset,
+)
 
 
 pytestmark = pytest.mark.unit
@@ -37,3 +42,16 @@ def test_find_nearest_city_respects_threshold_override():
 
 def test_city_names_do_not_embed_utc_offset_labels():
     assert all("UTC" not in city.name for city in CITIES)
+
+
+def test_infer_utc_offset_prefers_nearest_city_offset_when_available():
+    utc_offset, city = infer_utc_offset(19.0761, 72.8778)
+    assert utc_offset == pytest.approx(5.5)
+    assert city is not None
+    assert city.name == 'Mumbai'
+
+
+def test_infer_utc_offset_falls_back_to_longitude_rounding_without_city():
+    utc_offset, city = infer_utc_offset(0.0, -140.0, max_distance_km=100)
+    assert utc_offset == pytest.approx(-9.0)
+    assert city is None

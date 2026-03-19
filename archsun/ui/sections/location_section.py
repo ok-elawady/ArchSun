@@ -1,4 +1,4 @@
-from archsun.core.locations import CITIES, find_nearest_city
+from archsun.core.locations import CITIES, infer_utc_offset
 from archsun.core.models import Location
 from archsun.ui import qt_compat
 from archsun.ui.map_picker import MapPickerDialog
@@ -19,6 +19,7 @@ class LocationSection(QtWidgets.QWidget):
 
         self.build_ui()
         self.connect_signals()
+        self._update_timezone_hint()
 
     def build_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
@@ -37,11 +38,13 @@ class LocationSection(QtWidgets.QWidget):
         for city in CITIES:
             self.city_combo.addItem(city.name)
         self.city_combo.setToolTip(
-            "Choose a nearby city to fill in the location and a starting UTC Offset."
+            "Choose a nearby city to fill in the location and a starting UTC offset. Verify the offset manually if daylight saving time applies."
         )
 
         self.map_button = QtWidgets.QPushButton("Pick From Map")
-        self.map_button.setToolTip("Pick a place on the map to fill the location.")
+        self.map_button.setToolTip(
+            "Pick a place on the map to fill the location. ArchSun will use a nearby city offset when available, otherwise it falls back to a longitude-based guess."
+        )
 
         self.lat_spin = QtWidgets.QDoubleSpinBox()
         self.lat_spin.setRange(-90.0, 90.0)
@@ -61,8 +64,11 @@ class LocationSection(QtWidgets.QWidget):
         self.tz_spin.setSingleStep(0.5)
         self.tz_spin.setValue(-5.0)
         self.tz_spin.setToolTip(
-            "Manual UTC Offset used in the sun calculation. Adjust this if daylight savings or local time differs."
+            "Manual UTC offset used to convert the selected local date and time to UTC for the sun calculation. Adjust this if daylight saving time or local timezone rules differ."
         )
+        self.tz_help_label = QtWidgets.QLabel("")
+        self.tz_help_label.setWordWrap(True)
+        self.tz_help_label.setStyleSheet("font-size: 11px; color: #9aa4af;")
 
         section_block = QtWidgets.QWidget()
         section_block.setObjectName("SectionBlock")
@@ -76,11 +82,12 @@ class LocationSection(QtWidgets.QWidget):
         form_layout.addRow(self._label("Longitude"), self.lon_spin)
         form_layout.addRow(
             self._label(
-                "UTC Offset",
+                "UTC Offset (Manual)",
                 "Manual time offset used for the sun calculation. This is editable and not daylight-savings aware.",
             ),
             self.tz_spin,
         )
+        form_layout.addRow("", self.tz_help_label)
         section_block.setLayout(form_layout)
 
         layout.addWidget(section_block)
@@ -91,6 +98,7 @@ class LocationSection(QtWidgets.QWidget):
         self.lat_spin.valueChanged.connect(self.emit_values_changed)
         self.lon_spin.valueChanged.connect(self.emit_values_changed)
         self.tz_spin.valueChanged.connect(self.emit_values_changed)
+        self.tz_spin.valueChanged.connect(self._update_timezone_hint)
 
     def emit_values_changed(self, *_args):
         self.valuesChanged.emit()
@@ -109,10 +117,7 @@ class LocationSection(QtWidgets.QWidget):
             lat = dialog.selected_lat
             lon = dialog.selected_lon
 
-            utc_offset = round(lon / 15.0)
-            utc_offset = max(-12, min(14, utc_offset))
-
-            nearest = find_nearest_city(lat, lon)
+            utc_offset, nearest = infer_utc_offset(lat, lon)
             if nearest:
                 city_name = nearest.name
             else:
@@ -155,7 +160,25 @@ class LocationSection(QtWidgets.QWidget):
         self.tz_spin.setValue(utc_offset)
 
         del blockers
+        self._update_timezone_hint()
         self.emit_values_changed()
+
+    def _update_timezone_hint(self, *_args):
+        offset = self.tz_spin.value()
+        sign = "+" if offset >= 0 else "-"
+        absolute_offset = abs(offset)
+        hours = int(absolute_offset)
+        minutes = int(round((absolute_offset - hours) * 60))
+
+        if minutes == 60:
+            hours += 1
+            minutes = 0
+
+        self.tz_help_label.setText(
+            "Used to convert the selected local time to UTC: "
+            f"UTC{sign}{hours:02d}:{minutes:02d}. "
+            "City and map picks provide a starting value only, so verify daylight saving time for the chosen date."
+        )
 
     def _label(self, text: str, tooltip: str = "") -> QtWidgets.QLabel:
         label = QtWidgets.QLabel(text)

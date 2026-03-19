@@ -120,3 +120,24 @@ def find_nearest_city(lat, lon, max_distance_km=300):
         return nearest
 
     return None
+
+
+def infer_utc_offset(lat, lon, max_distance_km=300):
+    """
+    Suggest a UTC offset for a coordinate.
+
+    Returns a tuple of:
+    - utc_offset: best available offset suggestion
+    - nearest_city: nearby City when one is available within the threshold
+
+    The result is still only a starting point for UI workflows and does not
+    account for daylight saving time or historical timezone changes.
+    """
+
+    nearest = find_nearest_city(lat, lon, max_distance_km=max_distance_km)
+    if nearest is not None:
+        return nearest.utc_offset, nearest
+
+    utc_offset = round(lon / 15.0)
+    utc_offset = max(-12, min(14, utc_offset))
+    return utc_offset, None
