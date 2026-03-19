@@ -13,11 +13,11 @@
 - Confirm the tooltips make these meanings clear to an artist:
   - `Location` is the real-world site.
   - `UTC Offset` is a manual time offset used in the sun calculation.
-  - `North Offset` aligns the rig to the model orientation in Maya.
+  - `North Offset` aligns the daylight setup to the model orientation in Maya.
 - Confirm the status message flows through:
   - initial prompt
   - dirty/pending message after changes
   - applied message after `Update Lighting`
-  - a clear error message if Arnold cannot be loaded or the rig update fails
+  - a clear error message if Arnold cannot be loaded or the setup update fails
 - Drag `uninstall_archsun.py` into Maya and confirm the installed files are removed.
 

@@ -1,7 +1,7 @@
 from archsun import APP_NAME, DISPLAY_VERSION
 from archsun.core.daylight_service import DaylightService
 from archsun.maya import runtime
-from archsun.maya.arnold_rig import ArnoldDaylightRig
+from archsun.maya.arnold_setup import ArnoldDaylightSetup
 from archsun.ui import qt_compat, status_text
 from archsun.ui.resources import asset_path
 from archsun.ui.sections import (
@@ -33,7 +33,7 @@ class ArchSunWindow(QtWidgets.QWidget):
         self.setWindowTitle(WINDOW_TITLE)
 
         self.service = DaylightService()
-        self.rig = ArnoldDaylightRig()
+        self.daylight_setup = ArnoldDaylightSetup()
         self._has_applied = False
 
         self.build_ui()
@@ -94,8 +94,8 @@ class ArchSunWindow(QtWidgets.QWidget):
             dt = self.datetime_section.get_datetime()
             sun_state = self.service.get_sun_state(location, dt)
 
-            was_created = self.rig.ensure_exists()
-            applied_state = self.rig.set_sun_rotation(
+            was_created = self.daylight_setup.ensure_exists()
+            applied_state = self.daylight_setup.set_sun_rotation(
                 azimuth=sun_state.azimuth,
                 altitude=sun_state.altitude,
                 north_offset=self.manual_section.north_offset(),

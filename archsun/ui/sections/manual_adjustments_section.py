@@ -23,7 +23,7 @@ class ManualAdjustmentsSection(QtWidgets.QWidget):
         title = QtWidgets.QLabel("Manual Adjustments")
         title.setStyleSheet("font-weight: bold;")
         title.setToolTip(
-            "Scene-side tweaks. North Offset aligns the rig to your model, and Intensity scales the final dome brightness."
+            "Scene-side tweaks. North Offset aligns the daylight setup to your model, and Intensity scales the final dome brightness."
         )
         layout.addWidget(title)
 

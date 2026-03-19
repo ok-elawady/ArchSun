@@ -121,7 +121,7 @@ def _install_readme() -> str:
 
         Notes
         -----
-        - Arnold (`mtoa`) is required when you update the rig.
+        - Arnold (`mtoa`) is required when you update the setup.
         - Keep this extracted folder if you want the drag-and-drop uninstall script later.
         - GitHub Releases and Gumroad should ship the same build so version numbers stay aligned.
         """

@@ -1,13 +1,15 @@
 from archsun.core.models import AppliedLightingState
 from archsun.maya import runtime
-from archsun.maya.constants import GROUP_NAME, SKY_NAME
+from archsun.maya.constants import GROUP_NAME, PHYSICAL_SKY_NAME, SKY_NAME
 
 
 def _cmds():
     return runtime.get_cmds()
 
 
-def _ensure_skydome_light(transform_name: str, parent_group: str) -> tuple[str, str, str]:
+def _ensure_skydome_light(
+    transform_name: str, physical_sky_name: str, parent_group: str
+) -> tuple[str, str, str]:
     cmds = _cmds()
 
     runtime.ensure_plugin_loaded("mtoa", quiet=True)
@@ -32,14 +34,15 @@ def _ensure_skydome_light(transform_name: str, parent_group: str) -> tuple[str, 
         cmds.parent(transform, parent_group)
 
     # Create and connect aiPhysicalSky
-    phys_sky_name = f"{transform_name}_PhysicalSky"
     if (
-        cmds.objExists(phys_sky_name)
-        and cmds.nodeType(phys_sky_name) == "aiPhysicalSky"
+        cmds.objExists(physical_sky_name)
+        and cmds.nodeType(physical_sky_name) == "aiPhysicalSky"
     ):
-        phys_sky = phys_sky_name
+        phys_sky = physical_sky_name
     else:
-        phys_sky = cmds.shadingNode("aiPhysicalSky", asTexture=True, name=phys_sky_name)
+        phys_sky = cmds.shadingNode(
+            "aiPhysicalSky", asTexture=True, name=physical_sky_name
+        )
 
     # Connect to skydome color
     if not cmds.isConnected(f"{phys_sky}.outColor", f"{shape}.color"):
@@ -48,21 +51,22 @@ def _ensure_skydome_light(transform_name: str, parent_group: str) -> tuple[str, 
     return transform, shape, phys_sky
 
 
-class ArnoldDaylightRig:
+class ArnoldDaylightSetup:
     """
-    Manages an Arnold physical-sky skydome rig in the Maya scene.
+    Manages an Arnold physical-sky skydome daylight setup in the Maya scene.
     """
 
     def __init__(self):
         self.group = GROUP_NAME
         self.sky_transform = SKY_NAME
+        self.physical_sky = PHYSICAL_SKY_NAME
 
         self._sky_shape = None
         self._phys_sky = None
 
     def ensure_exists(self) -> bool:
         """
-        Create or reuse the rig nodes. Safe to call multiple times.
+        Create or reuse the setup nodes. Safe to call multiple times.
         """
         cmds = _cmds()
         was_created = False
@@ -76,13 +80,14 @@ class ArnoldDaylightRig:
                 was_created = True
 
             # Create / reuse sky (Arnold skydome + physical sky)
-            phys_sky_name = f"{self.sky_transform}_PhysicalSky"
             had_sky = cmds.objExists(self.sky_transform)
             had_phys_sky = (
-                cmds.objExists(phys_sky_name)
-                and cmds.nodeType(phys_sky_name) == "aiPhysicalSky"
+                cmds.objExists(self.physical_sky)
+                and cmds.nodeType(self.physical_sky) == "aiPhysicalSky"
             )
-            sky_t, sky_s, phys_sky = _ensure_skydome_light(self.sky_transform, self.group)
+            sky_t, sky_s, phys_sky = _ensure_skydome_light(
+                self.sky_transform, self.physical_sky, self.group
+            )
             was_created = was_created or not had_sky or not had_phys_sky
 
             # Parent to group

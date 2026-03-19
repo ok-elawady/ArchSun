@@ -1,7 +1,7 @@
 from archsun.core.models import AppliedLightingState
 
 
-INITIAL_STATUS_MESSAGE = "Press Update Lighting to create the ArchSun rig."
+INITIAL_STATUS_MESSAGE = "Press Update Lighting to create the ArchSun setup."
 DIRTY_STATUS_MESSAGE = "Settings changed.\nClick Update Lighting to apply."
 
 
@@ -16,7 +16,9 @@ def dirty_message() -> str:
 def build_applied_message(
     was_created: bool, applied_state: AppliedLightingState
 ) -> str:
-    status_prefix = "ArchSun rig added." if was_created else "ArchSun rig updated."
+    status_prefix = (
+        "ArchSun setup added." if was_created else "ArchSun setup updated."
+    )
     summary = build_status_summary(applied_state)
     return f"{status_prefix}\n{summary}."
 

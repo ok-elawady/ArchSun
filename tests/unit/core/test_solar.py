@@ -11,6 +11,11 @@ pytestmark = pytest.mark.unit
 
 
 NEW_YORK = Location(latitude=40.7128, longitude=-74.0060, timezone_offset=-5.0)
+NREL_REFERENCE = Location(
+    latitude=39.742476,
+    longitude=-105.1786,
+    timezone_offset=-7.0,
+)
 
 
 def test_calculate_sun_position_returns_finite_values_in_expected_range():
@@ -44,3 +49,13 @@ def test_calculate_sun_position_stays_finite_near_poles():
     assert math.isfinite(state.azimuth)
     assert math.isfinite(state.altitude)
 
+
+
+def test_calculate_sun_position_matches_known_reference_case():
+    state = calculate_sun_position(
+        NREL_REFERENCE,
+        datetime(2003, 10, 17, 12, 30, 30),
+    )
+
+    assert state.azimuth == pytest.approx(194.34, abs=0.75)
+    assert state.altitude == pytest.approx(39.89, abs=0.75)

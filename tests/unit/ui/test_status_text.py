@@ -10,7 +10,7 @@ pytestmark = pytest.mark.unit
 def test_initial_message_matches_expected_text():
     assert (
         status_text.initial_message()
-        == "Press Update Lighting to create the ArchSun rig."
+        == "Press Update Lighting to create the ArchSun setup."
     )
 
 
@@ -28,8 +28,8 @@ def test_build_applied_message_uses_added_and_updated_prefixes():
     added = status_text.build_applied_message(True, applied_state)
     updated = status_text.build_applied_message(False, applied_state)
 
-    assert added.startswith("ArchSun rig added.\n")
-    assert updated.startswith("ArchSun rig updated.\n")
+    assert added.startswith("ArchSun setup added.\n")
+    assert updated.startswith("ArchSun setup updated.\n")
 
 
 @pytest.mark.parametrize(
