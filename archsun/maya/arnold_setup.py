@@ -1,3 +1,5 @@
+from typing import Optional
+
 from archsun.core.models import AppliedLightingState
 from archsun.maya import runtime
 from archsun.maya.constants import GROUP_NAME, PHYSICAL_SKY_NAME, SKY_NAME
@@ -7,6 +9,49 @@ def _cmds():
     return runtime.get_cmds()
 
 
+def _find_skydome_light(parent_group: str) -> tuple[Optional[str], Optional[str]]:
+    cmds = _cmds()
+
+    if not cmds.objExists(parent_group):
+        return None, None
+
+    children = cmds.listRelatives(parent_group, children=True, fullPath=True) or []
+    for child in children:
+        shapes = cmds.listRelatives(child, shapes=True, fullPath=True) or []
+        for shape in shapes:
+            if cmds.nodeType(shape) == "aiSkyDomeLight":
+                return child, shape
+
+    return None, None
+
+
+def _node_name(node_path: str) -> str:
+    return node_path.split("|")[-1]
+
+
+def _try_rename_skydome_transform(
+    transform: str, requested_name: str, parent_group: str
+) -> tuple[str, str]:
+    cmds = _cmds()
+
+    if _node_name(transform) == requested_name:
+        shapes = cmds.listRelatives(transform, shapes=True, fullPath=True) or []
+        if not shapes:
+            raise RuntimeError(f"Arnold skydome transform '{transform}' has no shape.")
+        return transform, shapes[0]
+
+    try:
+        cmds.rename(transform, requested_name)
+    except Exception:
+        pass
+
+    transform, shape = _find_skydome_light(parent_group)
+    if not transform or not shape:
+        raise RuntimeError("ArchSun could not resolve the Arnold skydome light.")
+
+    return transform, shape
+
+
 def _ensure_skydome_light(
     transform_name: str, physical_sky_name: str, parent_group: str
 ) -> tuple[str, str, str]:
@@ -14,24 +59,19 @@ def _ensure_skydome_light(
 
     runtime.ensure_plugin_loaded("mtoa", quiet=True)
 
-    transform = None
-    shape = None
-    # Look for existing skydome under group
-    if cmds.objExists(parent_group):
-        children = cmds.listRelatives(parent_group, children=True) or []
-        for child in children:
-            shapes = cmds.listRelatives(child, shapes=True) or []
-            for s in shapes:
-                if cmds.nodeType(s) == "aiSkyDomeLight":
-                    transform = child
-                    shape = s
-                    break
+    transform, shape = _find_skydome_light(parent_group)
 
     if not transform:
         # Create new skydome properly
-        transform = cmds.shadingNode("aiSkyDomeLight", asLight=True, name=transform_name)
-        shape = cmds.listRelatives(transform, shapes=True)[0]
-        cmds.parent(transform, parent_group)
+        created_transform = cmds.shadingNode(
+            "aiSkyDomeLight", asLight=True, name=transform_name
+        )
+        parent_result = cmds.parent(created_transform, parent_group) or [created_transform]
+        transform = parent_result[0]
+
+    transform, shape = _try_rename_skydome_transform(
+        transform, transform_name, parent_group
+    )
 
     # Create and connect aiPhysicalSky
     if (
@@ -79,7 +119,7 @@ class ArnoldDaylightSetup:
                 was_created = True
 
             # Create / reuse sky (Arnold skydome + physical sky)
-            had_sky = cmds.objExists(self.sky_transform)
+            had_sky = _find_skydome_light(self.group)[0] is not None
             had_phys_sky = (
                 cmds.objExists(self.physical_sky)
                 and cmds.nodeType(self.physical_sky) == "aiPhysicalSky"
@@ -88,10 +128,6 @@ class ArnoldDaylightSetup:
                 self.sky_transform, self.physical_sky, self.group
             )
             was_created = was_created or not had_sky or not had_phys_sky
-
-            # Parent to group
-            if cmds.listRelatives(sky_t, parent=True) != [self.group]:
-                cmds.parent(sky_t, self.group)
 
             self._sky_shape = sky_s
             self._phys_sky = phys_sky

@@ -1,6 +1,6 @@
 # Maya UI Smoke Checklist
 
-- Build a fresh release bundle with `python -m tools.build_release` and confirm `dist/ArchSun-0.3.3` plus `dist/ArchSun-0.3.3.zip` are created.
+- Build a fresh release bundle with `python -m tools.build_release` and confirm `dist/ArchSun-0.3.4` plus `dist/ArchSun-0.3.4.zip` are created.
 - Extract the release bundle and drag `archsun_install_drop.py` into Maya.
 - Confirm ArchSun is copied into the Maya user scripts folder and opens from the created shelf button.
 - Run `archsun.launcher.show_archsun()` manually and confirm the docked window opens on the Maya versions you support.

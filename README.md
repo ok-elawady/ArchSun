@@ -68,8 +68,8 @@ python -m tools.build_release
 ```
 
 This creates:
-- `dist/ArchSun-0.3.3`
-- `dist/ArchSun-0.3.3.zip`
+- `dist/ArchSun-0.3.4`
+- `dist/ArchSun-0.3.4.zip`
 
 The bundle includes:
 - `archsun_install_drop.py`

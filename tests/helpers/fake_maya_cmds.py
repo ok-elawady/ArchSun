@@ -9,6 +9,8 @@ class FakeMayaCmds:
         self.attrs = {}
         self.connections = set()
         self.undo_chunks = []
+        self.ignore_light_name = False
+        self._name_counters = {}
 
     def pluginInfo(self, plugin_name, query=False, loaded=False):
         if query and loaded:
@@ -33,8 +35,12 @@ class FakeMayaCmds:
 
     def shadingNode(self, node_type, asLight=False, asTexture=False, name=None):
         if asLight:
-            transform_name = name
-            shape_name = f"{name}Shape"
+            if self.ignore_light_name:
+                transform_name = self._next_generated_name("transform")
+            else:
+                transform_name = name
+
+            shape_name = f"{transform_name}Shape"
             self._create_node(transform_name, "transform")
             self._create_node(shape_name, node_type)
             self.nodes[transform_name]["shapes"] = [shape_name]
@@ -48,6 +54,8 @@ class FakeMayaCmds:
         raise NotImplementedError("Unsupported shadingNode configuration")
 
     def parent(self, child, parent_group):
+        child = self._normalize_node_name(child)
+        parent_group = self._normalize_node_name(parent_group)
         child_node = self.nodes[child]
         old_parent = child_node["parent"]
 
@@ -60,28 +68,85 @@ class FakeMayaCmds:
 
         return [child]
 
+    def rename(self, old_name, new_name):
+        old_name = self._normalize_node_name(old_name)
+        new_name = self._normalize_node_name(new_name)
+        if old_name == new_name:
+            return new_name
+        if new_name in self.nodes:
+            raise ValueError(f"Node '{new_name}' already exists")
+
+        node = self.nodes.pop(old_name)
+        self.nodes[new_name] = node
+
+        if node["type"] == "transform":
+            parent_name = node["parent"]
+            if parent_name:
+                self.nodes[parent_name]["children"] = [
+                    new_name if child == old_name else child
+                    for child in self.nodes[parent_name]["children"]
+                ]
+
+            renamed_shapes = []
+            for shape_name in list(node["shapes"]):
+                new_shape_name = shape_name
+                if shape_name == f"{old_name}Shape":
+                    new_shape_name = f"{new_name}Shape"
+                    if new_shape_name in self.nodes:
+                        raise ValueError(f"Node '{new_shape_name}' already exists")
+                    shape_node = self.nodes.pop(shape_name)
+                    self.nodes[new_shape_name] = shape_node
+                else:
+                    shape_node = self.nodes[shape_name]
+
+                shape_node["parent"] = new_name
+                renamed_shapes.append(new_shape_name)
+
+            node["shapes"] = renamed_shapes
+            return new_name
+
+        parent_name = node["parent"]
+        if parent_name:
+            self.nodes[parent_name]["shapes"] = [
+                new_name if shape == old_name else shape
+                for shape in self.nodes[parent_name]["shapes"]
+            ]
+
+        return new_name
+
     def objExists(self, name):
-        return name in self.nodes
+        return self._normalize_node_name(name) in self.nodes
 
     def listRelatives(
         self, node_name, children=False, shapes=False, parent=False, fullPath=False
     ):
+        node_name = self._normalize_node_name(node_name)
         if node_name not in self.nodes:
             return []
 
         node = self.nodes[node_name]
 
         if children:
-            return list(node["children"])
+            children_names = list(node["children"])
+            if fullPath:
+                return [self._full_path(child_name) for child_name in children_names]
+            return children_names
         if shapes:
-            return list(node["shapes"])
+            shape_names = list(node["shapes"])
+            if fullPath:
+                return [self._full_path(shape_name) for shape_name in shape_names]
+            return shape_names
         if parent:
-            return [node["parent"]] if node["parent"] else []
+            if not node["parent"]:
+                return []
+            if fullPath:
+                return [self._full_path(node["parent"])]
+            return [node["parent"]]
 
         return []
 
     def nodeType(self, node_name):
-        return self.nodes[node_name]["type"]
+        return self.nodes[self._normalize_node_name(node_name)]["type"]
 
     def isConnected(self, source_attr, destination_attr):
         return (source_attr, destination_attr) in self.connections
@@ -93,7 +158,15 @@ class FakeMayaCmds:
         self.attrs[attr_name] = value
 
     def get_attr(self, attr_name):
-        return self.attrs.get(attr_name)
+        if attr_name in self.attrs:
+            return self.attrs.get(attr_name)
+
+        normalized_attr = self._normalize_attr_name(attr_name)
+        for stored_attr, value in self.attrs.items():
+            if self._normalize_attr_name(stored_attr) == normalized_attr:
+                return value
+
+        return None
 
     def _create_node(self, name, node_type):
         self.nodes[name] = {
@@ -102,6 +175,27 @@ class FakeMayaCmds:
             "children": [],
             "shapes": [],
         }
+
+    def _next_generated_name(self, base_name):
+        current = self._name_counters.get(base_name, 0) + 1
+        self._name_counters[base_name] = current
+        return f"{base_name}{current}"
+
+    def _normalize_node_name(self, name):
+        return name.split("|")[-1]
+
+    def _normalize_attr_name(self, attr_name):
+        node_name, separator, attribute_name = attr_name.partition(".")
+        normalized_node_name = self._normalize_node_name(node_name)
+        if not separator:
+            return normalized_node_name
+        return f"{normalized_node_name}.{attribute_name}"
+
+    def _full_path(self, node_name):
+        parent_name = self.nodes[node_name]["parent"]
+        if not parent_name:
+            return f"|{node_name}"
+        return f"{self._full_path(parent_name)}|{node_name}"
 
 
 def install_fake_maya(
@@ -123,6 +217,7 @@ def install_fake_maya(
         "group",
         "shadingNode",
         "parent",
+        "rename",
         "objExists",
         "listRelatives",
         "nodeType",

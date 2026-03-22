@@ -28,6 +28,87 @@ def test_ensure_exists_returns_true_when_setup_is_missing(arnold_setup_module):
     assert fake_cmds.objExists("ARCHSUN_PHYSICALSKY_TEX")
 
 
+def test_ensure_exists_reuses_new_skydome_even_when_maya_ignores_light_name(
+    arnold_setup_module,
+):
+    module, fake_cmds = arnold_setup_module
+    fake_cmds.ignore_light_name = True
+    setup = module.ArnoldDaylightSetup()
+
+    setup.ensure_exists()
+    applied_state = setup.set_sun_rotation(
+        azimuth=180.0,
+        altitude=30.0,
+        north_offset=0.0,
+        intensity_override=1.0,
+    )
+
+    assert applied_state.final_intensity == pytest.approx(2.0)
+    assert fake_cmds.listRelatives("ARCHSUN_DAYLIGHT_GRP", children=True) == [
+        "ARCHSUN_SKYDOME_LGT"
+    ]
+    assert fake_cmds.objExists("ARCHSUN_SKYDOME_LGT")
+    assert not fake_cmds.objExists("transform1")
+    assert fake_cmds.get_attr("ARCHSUN_SKYDOME_LGTShape.intensity") == pytest.approx(
+        2.0
+    )
+
+
+def test_ensure_exists_reuses_existing_misnamed_skydome_under_group(
+    arnold_setup_module,
+):
+    module, fake_cmds = arnold_setup_module
+    fake_cmds.group(em=True, name="ARCHSUN_DAYLIGHT_GRP")
+    fake_cmds.ignore_light_name = True
+    misnamed_transform = fake_cmds.shadingNode(
+        "aiSkyDomeLight", asLight=True, name="ARCHSUN_SKYDOME_LGT"
+    )
+    fake_cmds.parent(misnamed_transform, "ARCHSUN_DAYLIGHT_GRP")
+    fake_cmds.ignore_light_name = False
+    setup = module.ArnoldDaylightSetup()
+
+    setup.ensure_exists()
+
+    assert fake_cmds.listRelatives("ARCHSUN_DAYLIGHT_GRP", children=True) == [
+        "ARCHSUN_SKYDOME_LGT"
+    ]
+    assert fake_cmds.objExists("ARCHSUN_SKYDOME_LGT")
+    assert not fake_cmds.objExists("transform1")
+
+
+def test_ensure_exists_keeps_working_if_skydome_rename_is_blocked(
+    arnold_setup_module,
+):
+    module, fake_cmds = arnold_setup_module
+    fake_cmds.group(em=True, name="ARCHSUN_DAYLIGHT_GRP")
+    fake_cmds.group(em=True, name="ARCHSUN_SKYDOME_LGT")
+    fake_cmds.parent("ARCHSUN_SKYDOME_LGT", "ARCHSUN_DAYLIGHT_GRP")
+    fake_cmds.ignore_light_name = True
+    misnamed_transform = fake_cmds.shadingNode(
+        "aiSkyDomeLight", asLight=True, name="ARCHSUN_SKYDOME_LGT"
+    )
+    fake_cmds.parent(misnamed_transform, "ARCHSUN_DAYLIGHT_GRP")
+    fake_cmds.ignore_light_name = False
+    setup = module.ArnoldDaylightSetup()
+
+    setup.ensure_exists()
+    applied_state = setup.set_sun_rotation(
+        azimuth=180.0,
+        altitude=30.0,
+        north_offset=0.0,
+        intensity_override=1.0,
+    )
+
+    assert applied_state.final_intensity == pytest.approx(2.0)
+    assert fake_cmds.listRelatives("ARCHSUN_DAYLIGHT_GRP", children=True) == [
+        "ARCHSUN_SKYDOME_LGT",
+        "transform1",
+    ]
+    assert fake_cmds.objExists("ARCHSUN_SKYDOME_LGT")
+    assert fake_cmds.objExists("transform1")
+    assert fake_cmds.get_attr("transform1Shape.intensity") == pytest.approx(2.0)
+
+
 def test_ensure_exists_returns_false_when_setup_already_exists(arnold_setup_module):
     module, _fake_cmds = arnold_setup_module
     setup = module.ArnoldDaylightSetup()
@@ -83,4 +164,3 @@ def test_set_sun_rotation_uses_expected_altitude_intensity_curve(
     )
 
     assert applied_state.final_intensity == pytest.approx(expected_intensity)
-

@@ -1,5 +1,5 @@
 APP_NAME = "ArchSun"
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 DISPLAY_VERSION = f"v{__version__}"
 
 __all__ = ["APP_NAME", "DISPLAY_VERSION", "__version__"]
