@@ -10,6 +10,8 @@ from archsun import APP_NAME, DISPLAY_VERSION, __version__
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PACKAGE_DIR = REPO_ROOT / "archsun"
+INSTALLER_SCRIPT_NAME = "archsun_install_drop.py"
+UNINSTALLER_SCRIPT_NAME = "archsun_uninstall_drop.py"
 
 
 def release_name() -> str:
@@ -33,8 +35,8 @@ def build_release(output_root: str | Path | None = None) -> Path:
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
     )
 
-    _write_text(bundle_dir / "install_archsun.py", _installer_script("install"))
-    _write_text(bundle_dir / "uninstall_archsun.py", _installer_script("uninstall"))
+    _write_text(bundle_dir / INSTALLER_SCRIPT_NAME, _installer_script("install"))
+    _write_text(bundle_dir / UNINSTALLER_SCRIPT_NAME, _installer_script("uninstall"))
     _write_text(bundle_dir / "README_Install.txt", _install_readme())
 
     zip_path = output_dir / f"{release_name()}.zip"
@@ -71,24 +73,34 @@ def _installer_script(mode: str) -> str:
         "from pathlib import Path",
         "import sys",
         "",
-        "release_root = Path(__file__).resolve().parent",
-        'package_root = release_root / "package"',
-        "if str(package_root) not in sys.path:",
-        "    sys.path.insert(0, str(package_root))",
+        "def _release_root():",
+        '    module_file = globals().get("__file__")',
+        "    if module_file:",
+        "        return Path(module_file).resolve().parent",
+        "    return Path.cwd()",
         "",
-        "for module_name in list(sys.modules):",
-        '    if module_name == "archsun" or module_name.startswith("archsun."):',
-        "        sys.modules.pop(module_name, None)",
+        "def _prepare_release_package():",
+        "    release_root = _release_root()",
+        '    package_root = release_root / "package"',
+        "    if str(package_root) not in sys.path:",
+        "        sys.path.insert(0, str(package_root))",
         "",
-        "try:",
-        "    import maya.cmds as cmds",
-        "except ImportError as exc:",
-        '    raise RuntimeError("This script must be run inside Autodesk Maya.") from exc',
+        "    for module_name in list(sys.modules):",
+        '        if module_name == "archsun" or module_name.startswith("archsun."):',
+        "            sys.modules.pop(module_name, None)",
         "",
-        "from archsun import APP_NAME",
-        f"from archsun.maya.installer_support import {support_imports}",
+        "    return release_root",
         "",
         "def _main():",
+        "    release_root = _prepare_release_package()",
+        "    try:",
+        "        import maya.cmds as cmds",
+        "    except ImportError as exc:",
+        '        raise RuntimeError("This script must be run inside Autodesk Maya.") from exc',
+        "",
+        "    from archsun import APP_NAME",
+        f"    from archsun.maya.installer_support import {support_imports}",
+        "",
     ]
     lines.extend(f"    {line}" for line in action)
     lines.extend(
@@ -96,7 +108,12 @@ def _installer_script(mode: str) -> str:
             '    cmds.confirmDialog(title=title, message=message, button=["OK"])',
             "",
             "",
-            "_main()",
+            "def onMayaDroppedPythonFile(*_args, **_kwargs):",
+            "    _main()",
+            "",
+            "",
+            'if __name__ == "__main__":',
+            "    _main()",
         ]
     )
     return "\n".join(lines) + "\n"
@@ -111,13 +128,13 @@ def _install_readme() -> str:
         Quick Install
         -------------
         1. Extract this zip anywhere on your machine.
-        2. Drag `install_archsun.py` into Maya, or run it from the Script Editor.
+        2. Drag `archsun_install_drop.py` into Maya, or run it from the Script Editor.
         3. {APP_NAME} will be copied into your Maya user scripts folder.
         4. A shelf button will be added to the current shelf when Maya can do so.
 
         Quick Uninstall
         ---------------
-        - Drag `uninstall_archsun.py` into Maya to remove the installed files.
+        - Drag `archsun_uninstall_drop.py` into Maya to remove the installed files.
 
         Notes
         -----

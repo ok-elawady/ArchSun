@@ -68,12 +68,12 @@ python -m tools.build_release
 ```
 
 This creates:
-- `dist/ArchSun-0.2.0`
-- `dist/ArchSun-0.2.0.zip`
+- `dist/ArchSun-0.3.3`
+- `dist/ArchSun-0.3.3.zip`
 
 The bundle includes:
-- `install_archsun.py`
-- `uninstall_archsun.py`
+- `archsun_install_drop.py`
+- `archsun_uninstall_drop.py`
 - a packaged `archsun` folder
 - a simple install readme for Maya users
 
