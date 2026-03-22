@@ -50,7 +50,6 @@ def _ensure_skydome_light(
 
     return transform, shape, phys_sky
 
-
 class ArnoldDaylightSetup:
     """
     Manages an Arnold physical-sky skydome daylight setup in the Maya scene.
@@ -138,9 +137,7 @@ class ArnoldDaylightSetup:
         cmds.setAttr(f"{self._phys_sky}.sun_size", 2.5)
         cmds.setAttr(f"{self._phys_sky}.turbidity", 3.5)
 
-        # Smart intensity handling
         if self._sky_shape and cmds.objExists(self._sky_shape):
-
             if alt <= 0:
                 sky_intensity = 0.2
             else:
@@ -159,43 +156,3 @@ class ArnoldDaylightSetup:
             altitude=alt,
             final_intensity=max(final_intensity, 0.0),
         )
-
-    def apply_weather_preset(self, preset: str) -> None:
-        """
-        Simple presets: clear, hazy, overcast
-        """
-        cmds = _cmds()
-        runtime.ensure_plugin_loaded("mtoa", quiet=True)
-        preset = (preset or "").strip().lower()
-
-        if not cmds.objExists(self.sky_transform):
-            self.ensure_exists()
-
-        # Re-fetch shapes if needed
-        if not self._sky_shape:
-            shapes = (
-                cmds.listRelatives(self.sky_transform, shapes=True, fullPath=False)
-                or []
-            )
-            self._sky_shape = shapes[0] if shapes else None
-
-        sky = self._sky_shape
-        phys = self._phys_sky
-
-        if not sky or not phys:
-            return
-
-        if preset == "clear":
-            cmds.setAttr(f"{phys}.turbidity", 2.0)
-            cmds.setAttr(f"{sky}.intensity", 4.0)
-
-        elif preset == "hazy":
-            cmds.setAttr(f"{phys}.turbidity", 5.0)
-            cmds.setAttr(f"{sky}.intensity", 2.5)
-
-        elif preset == "overcast":
-            cmds.setAttr(f"{phys}.turbidity", 10.0)
-            cmds.setAttr(f"{sky}.intensity", 1.5)
-
-        else:
-            raise ValueError("Unknown preset. Use: clear, hazy, overcast")

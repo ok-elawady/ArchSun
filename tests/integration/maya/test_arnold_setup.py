@@ -84,37 +84,3 @@ def test_set_sun_rotation_uses_expected_altitude_intensity_curve(
 
     assert applied_state.final_intensity == pytest.approx(expected_intensity)
 
-
-def test_apply_weather_preset_sets_expected_values(arnold_setup_module):
-    module, fake_cmds = arnold_setup_module
-    setup = module.ArnoldDaylightSetup()
-    setup.ensure_exists()
-
-    setup.apply_weather_preset("clear")
-    assert fake_cmds.get_attr("ARCHSUN_PHYSICALSKY_TEX.turbidity") == pytest.approx(2.0)
-    assert fake_cmds.get_attr("ARCHSUN_SKYDOME_LGTShape.intensity") == pytest.approx(
-        4.0
-    )
-
-    setup.apply_weather_preset("hazy")
-    assert fake_cmds.get_attr("ARCHSUN_PHYSICALSKY_TEX.turbidity") == pytest.approx(5.0)
-    assert fake_cmds.get_attr("ARCHSUN_SKYDOME_LGTShape.intensity") == pytest.approx(
-        2.5
-    )
-
-    setup.apply_weather_preset("overcast")
-    assert fake_cmds.get_attr("ARCHSUN_PHYSICALSKY_TEX.turbidity") == pytest.approx(
-        10.0
-    )
-    assert fake_cmds.get_attr("ARCHSUN_SKYDOME_LGTShape.intensity") == pytest.approx(
-        1.5
-    )
-
-
-def test_apply_weather_preset_raises_for_unknown_preset(arnold_setup_module):
-    module, _fake_cmds = arnold_setup_module
-    setup = module.ArnoldDaylightSetup()
-    setup.ensure_exists()
-
-    with pytest.raises(ValueError, match="Unknown preset"):
-        setup.apply_weather_preset("stormy")

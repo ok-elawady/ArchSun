@@ -110,11 +110,6 @@ class ArchSunWindow(QtWidgets.QWidget):
             status_text.build_applied_message(was_created, applied_state)
         )
 
-        print(
-            f"ArchSun Updated -> Azimuth: {sun_state.azimuth:.2f} "
-            f"Altitude: {sun_state.altitude:.2f}"
-        )
-
 
 def show_window():
     cmds = runtime.get_cmds()
