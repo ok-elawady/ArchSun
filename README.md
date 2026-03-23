@@ -37,11 +37,11 @@ ArchSun currently creates and manages these Maya nodes:
 
 ## Project Structure
 
-- [archsun/core](/d:/CustomMayaScripts/ArchSun/archsun/core): solar math, data models, location helpers
-- [archsun/maya](/d:/CustomMayaScripts/ArchSun/archsun/maya): Maya runtime access, daylight setup creation, installer support
-- [archsun/ui](/d:/CustomMayaScripts/ArchSun/archsun/ui): dockable Qt UI, sections, resources, status messaging
-- [tests](/d:/CustomMayaScripts/ArchSun/tests): unit, integration, and manual smoke coverage
-- [tools](/d:/CustomMayaScripts/ArchSun/tools): release build script
+- [archsun/core](archsun/core): solar math, data models, location helpers
+- [archsun/maya](archsun/maya): Maya runtime access, daylight setup creation, installer support
+- [archsun/ui](archsun/ui): dockable Qt UI, sections, resources, status messaging
+- [tests](tests): unit, integration, and manual smoke coverage
+- [tools](tools): release build script
 
 ## Main Workflow
 
