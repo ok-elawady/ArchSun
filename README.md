@@ -2,6 +2,10 @@
 
 ArchSun is a Python-based Autodesk Maya tool that creates and updates an Arnold daylight setup from real-world location, date, time, and scene north settings.
 
+## Demo
+
+![ArchSun demo GIF](docs/media/archsun-demo.gif)
+
 This project was built as a CG TD trainee portfolio piece. The goal was to make a small but complete Maya tool that combines:
 - Qt UI inside Maya
 - scene creation and scene updates through `maya.cmds`
@@ -68,8 +72,8 @@ python -m tools.build_release
 ```
 
 This creates:
-- `dist/ArchSun-0.3.4`
-- `dist/ArchSun-0.3.4.zip`
+- `dist/ArchSun-0.3.5`
+- `dist/ArchSun-0.3.5.zip`
 
 The bundle includes:
 - `archsun_install_drop.py`
@@ -106,24 +110,6 @@ python -m pip install -r requirements-dev.txt
 
 ## Current Limitations
 
-- The solar calculation in [solar.py](/d:/CustomMayaScripts/ArchSun/archsun/core/solar.py) is more robust than the original simplified version, but it is still not presented as a fully validated production-grade daylight solver.
 - Timezone handling is manual and not daylight-savings aware.
 - The tool is currently Arnold-specific.
 - UI smoke testing inside Maya is still partly manual.
-
-## Portfolio Framing
-
-If you are reviewing this as a trainee project, the intended value is not that it is a full production-ready daylight system. The intended value is that it shows the ability to:
-- identify a useful DCC workflow problem
-- design a usable artist-facing UI
-- connect UI input to scene behavior
-- organize code into maintainable modules
-- package a tool for delivery instead of stopping at a script
-
-## Suggested Next Improvements
-
-- Validate solar output against trusted reference cases
-- Improve timezone handling
-- Add clearer debug logging for Maya/Arnold failures
-- Add screenshots or a short demo GIF to this README
-- Add a small preset or batch workflow feature
